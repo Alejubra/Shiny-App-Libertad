@@ -43,10 +43,45 @@ ui <- dashboardPage(
   )
 )
 
-# server.R
-server <- function(input, output) {
-  # ... tu código del servidor aquí ...
+# Definir el servidor
+server <- function(input, output, session) {
+  datos_reactivos <- reactive({
+    read_csv("Datos/datos_libertad.csv")
+  })
+  output$libertad_personal_plot <- renderPlot({
+    data <- subset(Libertad, pais == input$pais_seleccionado & between(anio, input$rango_anios[1], input$rango_anios[2]))
+    columna <- ifelse(input$tipo_datos == "puntaje", "libertad_personal_puntaje", "libertad_personal_ranking")
+    plot(data$anio, data[[columna]], type = 'l',
+         main = paste("Libertad Personal en", input$pais_seleccionado, "a lo largo de los años seleccionados"),
+         xlab = "Año", ylab = ifelse(input$tipo_datos == "puntaje", "Puntaje", "Ranking"))
+  })
+  
+  output$libertad_humana_plot <- renderPlot({
+    data <- subset(Libertad, pais == input$pais_seleccionado & between(anio, input$rango_anios[1], input$rango_anios[2]))
+    columna <- ifelse(input$tipo_datos == "puntaje", "libertad_humana_puntaje", "libertad_humana_ranking")
+    plot(data$anio, data[[columna]], type = 'l',
+         main = paste("Libertad Humana en", input$pais_seleccionado, "a lo largo de los años seleccionados"),
+         xlab = "Año", ylab = ifelse(input$tipo_datos == "puntaje", "Puntaje", "Ranking"))
+  })
+  
+  output$libertad_economica_plot <- renderPlot({
+    data <- subset(Libertad, pais == input$pais_seleccionado & between(anio, input$rango_anios[1], input$rango_anios[2]))
+    columna <- ifelse(input$tipo_datos == "puntaje", "libertad_economica_puntaje", "libertad_economica_ranking")
+    plot(data$anio, data[[columna]], type = 'l',
+         main = paste("Libertad Económica en", input$pais_seleccionado, "a lo largo de los años seleccionados"),
+         xlab = "Año", ylab = ifelse(input$tipo_datos == "puntaje", "Puntaje", "Ranking"))
+  })
+  
+  output$descargar_datos <- downloadHandler(
+    filename = function() {
+      paste("graficos_", input$pais_seleccionado, "_", input$tipo_datos, "_", input$rango_anios[1], "_", input$rango_anios[2], ".zip", sep = "")
+    },
+    content = function(file) {
+      data <- subset(Libertad, pais == input$pais_seleccionado & between(anio, input$rango_anios[1], input$rango_anios[2]))
+      write.csv(data, file, row.names = FALSE)
+    }
+  )
 }
 
-# Crear la aplicación Shiny
-shinyApp(ui = ui, server = server)
+# Ejecutar la aplicación
+shinyApp(ui, server)
