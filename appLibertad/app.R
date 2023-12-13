@@ -1,51 +1,52 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
+# Cargar paquetes
 library(shiny)
+library(shinydashboard)
+library(readxl)
+library(ggplot2)
+library(dplyr)
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
+# Cargar datos
+Libertad <- readr::read_csv("Datos/datos_libertad.csv") 
 
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
+# Convertir libertad_humana_puntaje, libertad_personal_puntaje y libertad_economica_puntaje a numérico
+Libertad$libertad_humana_puntaje <- as.numeric(as.character(Libertad$libertad_humana_puntaje))
+Libertad$libertad_personal_puntaje <- as.numeric(as.character(Libertad$libertad_personal_puntaje))
+Libertad$libertad_economica_puntaje <- as.numeric(as.character(Libertad$libertad_economica_puntaje))
 
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
-        )
+# Definir la interfaz de usuario
+ui <- dashboardPage(
+  skin = "green",
+  dashboardHeader(title = "Libertades Mundiales"),
+  dashboardSidebar(
+    selectInput("pais_seleccionado", "Seleccione el país", choices = unique(Libertad$pais), selected = NULL),
+    sliderInput("rango_anios", "Seleccione el rango de años:",
+                min = min(Libertad$anio), max = max(Libertad$anio),
+                value = c(min(Libertad$anio), max(Libertad$anio)),
+                step = 1),
+    radioButtons("tipo_datos", "Seleccione el tipo de dato:",
+                 choices = c("Puntaje" = "puntaje", "Ranking" = "ranking"),
+                 selected = "puntaje"),
+    fluidRow(
+      column(3, offset = 1, align = "center",
+             downloadButton("descargar_datos", "Descargar Datos", class = "btn-primary")
+      )
     )
+  ),
+  dashboardBody(
+    tabBox(
+      title = "Libertades Mundiales",
+      id = "tabset1",
+      tabPanel("Libertad Personal", plotOutput("libertad_personal_plot")),
+      tabPanel("Libertad Humana", plotOutput("libertad_humana_plot")),
+      tabPanel("Libertad Económica", plotOutput("libertad_economica_plot"))
+    ),
+  )
 )
 
-# Define server logic required to draw a histogram
+# server.R
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
-    })
+  # ... tu código del servidor aquí ...
 }
 
-# Run the application 
+# Crear la aplicación Shiny
 shinyApp(ui = ui, server = server)
